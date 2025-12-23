@@ -1,4 +1,9 @@
 
+export interface ImageData {
+  data: string;
+  mimeType: string;
+}
+
 export interface WyckoffAnalysis {
   phase: string;
   context: string;

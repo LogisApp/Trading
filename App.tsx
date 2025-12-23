@@ -6,21 +6,23 @@ import AnalysisView from './components/AnalysisView';
 import ChatInterface from './components/ChatInterface';
 import ProSignals from './components/ProSignals';
 import { analyzeChart } from './services/geminiService';
-import { WyckoffAnalysis } from './types';
+import { WyckoffAnalysis, ImageData } from './types';
 
 const App: React.FC = () => {
   const [activeView, setActiveView] = useState('analizador');
   const [analysis, setAnalysis] = useState<WyckoffAnalysis | null>(null);
-  const [originalImage, setOriginalImage] = useState<string | null>(null);
+  const [originalImage, setOriginalImage] = useState<ImageData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleImageSelect = async (base64: string) => {
+  const handleImageSelect = async (image: ImageData) => {
     setIsLoading(true);
     setError(null);
-    setOriginalImage(base64);
+    setAnalysis(null); // Resetear análisis previo al cargar nueva imagen
+    setOriginalImage(image);
+    
     try {
-      const result = await analyzeChart(base64);
+      const result = await analyzeChart(image);
       setAnalysis(result);
     } catch (err) {
       console.error(err);
@@ -33,8 +35,10 @@ const App: React.FC = () => {
   return (
     <Layout activeView={activeView} onViewChange={setActiveView}>
       <div className="space-y-8 pb-20">
-        {activeView === 'analizador' ? (
-          <>
+        
+        {/* VISTA ANALIZADOR */}
+        <div className={activeView === 'analizador' ? 'block' : 'hidden'}>
+          <div className="space-y-8 animate-in fade-in duration-500">
             {/* Sección de Bienvenida */}
             <section className="text-center max-w-3xl mx-auto space-y-4">
               <h2 className="text-3xl md:text-5xl font-black tracking-tight leading-tight">
@@ -57,42 +61,80 @@ const App: React.FC = () => {
                 </div>
               )}
 
-              {analysis && originalImage && !isLoading && (
-                <div className="space-y-8 pt-4">
-                  <AnalysisView analysis={analysis} originalImageBase64={originalImage} />
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-                    <div className="lg:col-span-2 space-y-6">
-                      <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
-                        <h3 className="text-xl font-bold mb-4">Manual de Metodología</h3>
-                        <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
-                          <p>
-                            El <span className="text-indigo-400 font-bold">Método Wyckoff</span> es una técnica lógica de análisis de mercado que identifica cómo las grandes instituciones ("Dinero Inteligente") acumulan o distribuyen activos antes de los grandes movimientos de precios.
-                          </p>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                              <h4 className="text-indigo-400 font-bold mb-1">Acumulación</h4>
-                              <p className="text-xs text-slate-500">Los profesionales están comprando a los minoristas presos del pánico. Espera "Springs" y "Tests" exitosos antes de la tendencia alcista.</p>
-                            </div>
-                            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                              <h4 className="text-rose-400 font-bold mb-1">Distribución</h4>
-                              <p className="text-xs text-slate-500">Los profesionales están saliendo de posiciones para vender a minoristas codiciosos. Busca "Upthrusts" y volumen alto sin avance de precio.</p>
-                            </div>
-                          </div>
+              {/* Monitor de Gráfico (Se muestra en cuanto hay una imagen) */}
+              {originalImage && (
+                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                   <div className="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative">
+                      <div className="bg-slate-950/50 px-6 py-3 border-b border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <i className="fa-solid fa-display text-indigo-400"></i>
+                          <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Monitor de Gráfico Activo</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <div className="w-2 h-2 rounded-full bg-rose-500/50"></div>
+                          <div className="w-2 h-2 rounded-full bg-amber-500/50"></div>
+                          <div className="w-2 h-2 rounded-full bg-emerald-500/50"></div>
                         </div>
                       </div>
-                    </div>
-                    
-                    <div className="lg:col-span-1">
-                      <ChatInterface currentAnalysis={analysis} />
-                    </div>
-                  </div>
+                      
+                      <div className="relative aspect-video bg-black flex items-center justify-center">
+                        <img 
+                          src={`data:${originalImage.mimeType};base64,${originalImage.data}`} 
+                          alt="Gráfico Cargado" 
+                          className={`w-full h-full object-contain transition-all duration-700 ${isLoading ? 'opacity-40 grayscale blur-[2px]' : 'opacity-100'}`}
+                        />
+                        
+                        {isLoading && (
+                          <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 bg-indigo-950/10">
+                            <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                            <div className="text-center space-y-1">
+                              <p className="text-white font-bold tracking-widest uppercase">Escaneando Firmas Wyckoff</p>
+                              <p className="text-xs text-indigo-300 animate-pulse italic">Identificando zonas de acumulación institucional...</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                   </div>
+
+                   {/* Mostrar Análisis solo cuando esté listo */}
+                   {analysis && !isLoading && (
+                     <div className="space-y-8 animate-in fade-in duration-700">
+                        <AnalysisView analysis={analysis} originalImage={originalImage} />
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                          <div className="lg:col-span-2 space-y-6">
+                            <div className="bg-slate-900 rounded-2xl p-8 border border-slate-800">
+                              <h3 className="text-xl font-bold mb-4">Manual de Metodología</h3>
+                              <div className="space-y-4 text-slate-300 text-sm leading-relaxed">
+                                <p>
+                                  El <span className="text-indigo-400 font-bold">Método Wyckoff</span> es una técnica lógica de análisis de mercado que identifica cómo las grandes instituciones ("Dinero Inteligente") acumulan o distribuyen activos antes de los grandes movimientos de precios.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+                                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                    <h4 className="text-indigo-400 font-bold mb-1">Acumulación</h4>
+                                    <p className="text-xs text-slate-500">Los profesionales están comprando a los minoristas presos del pánico. Espera "Springs" y "Tests" exitosos antes de la tendencia alcista.</p>
+                                  </div>
+                                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                                    <h4 className="text-rose-400 font-bold mb-1">Distribución</h4>
+                                    <p className="text-xs text-slate-500">Los profesionales están saliendo de posiciones para vender a minoristas codiciosos. Busca "Upthrusts" y volumen alto sin avance de precio.</p>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="lg:col-span-1">
+                            <ChatInterface currentAnalysis={analysis} />
+                          </div>
+                        </div>
+                     </div>
+                   )}
                 </div>
               )}
             </div>
 
-            {/* Tarjetas de Información */}
-            {!analysis && !isLoading && (
+            {/* Tarjetas de Información si no hay imagen ni carga */}
+            {!originalImage && !isLoading && (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-12">
                 {[
                   {
@@ -121,10 +163,14 @@ const App: React.FC = () => {
                 ))}
               </div>
             )}
-          </>
-        ) : (
+          </div>
+        </div>
+
+        {/* VISTA SEÑALES PRO */}
+        <div className={activeView === 'señales-pro' ? 'block' : 'hidden'}>
           <ProSignals />
-        )}
+        </div>
+
       </div>
     </Layout>
   );

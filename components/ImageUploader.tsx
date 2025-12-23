@@ -1,8 +1,9 @@
 
 import React, { useRef, useState } from 'react';
+import { ImageData } from '../types';
 
 interface ImageUploaderProps {
-  onImageSelect: (base64: string) => void;
+  onImageSelect: (image: ImageData) => void;
   isLoading: boolean;
 }
 
@@ -15,9 +16,17 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onImageSelect, isLoading 
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        const base64 = reader.result as string;
-        setPreview(base64);
-        onImageSelect(base64.split(',')[1]);
+        const fullDataUri = reader.result as string;
+        setPreview(fullDataUri);
+        
+        // Extraer mimeType y base64 puro
+        const matches = fullDataUri.match(/^data:([^;]+);base64,(.+)$/);
+        if (matches) {
+          onImageSelect({
+            mimeType: matches[1],
+            data: matches[2]
+          });
+        }
       };
       reader.readAsDataURL(file);
     }

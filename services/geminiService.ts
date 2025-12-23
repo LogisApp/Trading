@@ -1,10 +1,10 @@
 
 import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
-import { WyckoffAnalysis, VisualEntriesResult, InvestigationResult, GroundingSource } from "../types";
+import { WyckoffAnalysis, ImageData, InvestigationResult, GroundingSource } from "../types";
 
 const API_KEY = process.env.API_KEY || '';
 
-export const analyzeChart = async (base64Image: string): Promise<WyckoffAnalysis> => {
+export const analyzeChart = async (image: ImageData): Promise<WyckoffAnalysis> => {
   const ai = new GoogleGenAI({ apiKey: API_KEY });
   
   const prompt = `
@@ -28,8 +28,8 @@ export const analyzeChart = async (base64Image: string): Promise<WyckoffAnalysis
           { text: prompt },
           {
             inlineData: {
-              mimeType: 'image/jpeg',
-              data: base64Image,
+              mimeType: image.mimeType,
+              data: image.data,
             },
           },
         ],
@@ -76,7 +76,7 @@ export const analyzeChart = async (base64Image: string): Promise<WyckoffAnalysis
   return JSON.parse(response.text || '{}');
 };
 
-export const generateVisualEntries = async (base64Image: string, analysis: WyckoffAnalysis): Promise<string> => {
+export const generateVisualEntries = async (image: ImageData, analysis: WyckoffAnalysis): Promise<string> => {
   const ai = new GoogleGenAI({ apiKey: API_KEY });
   
   const prompt = `
@@ -98,8 +98,8 @@ export const generateVisualEntries = async (base64Image: string, analysis: Wycko
       parts: [
         {
           inlineData: {
-            data: base64Image,
-            mimeType: 'image/jpeg'
+            data: image.data,
+            mimeType: image.mimeType
           }
         },
         { text: prompt }

@@ -1,14 +1,14 @@
 
 import React, { useState } from 'react';
-import { WyckoffAnalysis } from '../types';
+import { WyckoffAnalysis, ImageData } from '../types';
 import { generateVisualEntries } from '../services/geminiService';
 
 interface AnalysisViewProps {
   analysis: WyckoffAnalysis;
-  originalImageBase64: string;
+  originalImage: ImageData;
 }
 
-const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, originalImageBase64 }) => {
+const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, originalImage }) => {
   const [annotatedImage, setAnnotatedImage] = useState<string | null>(null);
   const [isGeneratingVisual, setIsGeneratingVisual] = useState(false);
   const [visualError, setVisualError] = useState<string | null>(null);
@@ -17,7 +17,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, originalImageBase
     setIsGeneratingVisual(true);
     setVisualError(null);
     try {
-      const result = await generateVisualEntries(originalImageBase64, analysis);
+      const result = await generateVisualEntries(originalImage, analysis);
       setAnnotatedImage(result);
     } catch (err) {
       console.error(err);
@@ -179,7 +179,7 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ analysis, originalImageBase
               </div>
             ) : (
               <img 
-                src={`data:image/png;base64,${annotatedImage}`} 
+                src={`data:${originalImage.mimeType};base64,${annotatedImage}`} 
                 alt="Plano Visual Wyckoff" 
                 className="w-full h-full object-contain"
               />
