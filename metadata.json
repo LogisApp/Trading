@@ -1,0 +1,7 @@
+{
+  "name": "Wyckoff Lens AI",
+  "description": "An AI-powered technical analysis tool based on the Wyckoff Methodology to detect institutional 'Compound Man' footprints in market charts.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
